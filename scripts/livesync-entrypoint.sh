@@ -44,6 +44,7 @@ const settings = {
   usePathObfuscation: env.LIVESYNC_USE_PATH_OBFUSCATION === "true",
   encryptInternalMetadata: env.LIVESYNC_ENCRYPT_INTERNAL_METADATA === "true",
   useRequestAPI: env.LIVESYNC_USE_REQUEST_API === "true",
+  syncInternalFiles: env.LIVESYNC_SYNC_INTERNAL_FILES === "true",
   usePluginSync: false,
   usePluginSyncV2: env.LIVESYNC_USE_PLUGIN_SYNC_V2 === "true",
   customChunkSize,

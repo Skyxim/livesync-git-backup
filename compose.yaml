@@ -1,6 +1,9 @@
 services:
   livesync:
-    image: ${LIVESYNC_IMAGE:-ghcr.io/vrtmrz/livesync-cli:edge}
+    image: ${LIVESYNC_IMAGE:-livesync-cli-fork:local}
+    build:
+      context: "${LIVESYNC_BUILD_CONTEXT:-https://github.com/Skyxim/obsidian-livesync.git#main}"
+      dockerfile: src/apps/cli/Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -13,6 +16,7 @@ services:
       LIVESYNC_CUSTOM_CHUNK_SIZE: ${LIVESYNC_CUSTOM_CHUNK_SIZE:-0}
       LIVESYNC_E2EE_ALGORITHM: ${LIVESYNC_E2EE_ALGORITHM:-v2}
       LIVESYNC_USE_REQUEST_API: ${LIVESYNC_USE_REQUEST_API:-false}
+      LIVESYNC_SYNC_INTERNAL_FILES: ${LIVESYNC_SYNC_INTERNAL_FILES:-false}
     volumes:
       - ./data/livesync:/data
       - ./data/vault:/vault
