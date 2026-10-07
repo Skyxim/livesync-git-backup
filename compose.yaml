@@ -1,0 +1,39 @@
+services:
+  livesync:
+    image: ${LIVESYNC_IMAGE:-ghcr.io/vrtmrz/livesync-cli:edge}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      LIVESYNC_DB_PATH: /data
+      LIVESYNC_REWRITE_SETTINGS: ${LIVESYNC_REWRITE_SETTINGS:-false}
+    volumes:
+      - ./data/livesync:/data
+      - ./data/vault:/vault
+      - ./scripts/livesync-entrypoint.sh:/opt/livesync/entrypoint.sh:ro
+    entrypoint:
+      - /bin/sh
+      - /opt/livesync/entrypoint.sh
+    command:
+      - daemon
+      - --vault
+      - /vault
+    stop_grace_period: 30s
+
+  backup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backup
+      args:
+        ALPINE_VERSION: ${BACKUP_ALPINE_VERSION:-3.22}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BACKUP_SOURCE: /vault
+      BACKUP_REPOSITORY: /backup
+    volumes:
+      - ./data/vault:/vault:ro
+      - ./data/git-backup:/backup
+    command:
+      - --loop

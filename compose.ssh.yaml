@@ -1,0 +1,8 @@
+services:
+  backup:
+    volumes:
+      - ${BACKUP_SSH_KEY_PATH:-./secrets/backup_ssh_key}:/run/ssh/backup_key:ro
+      - ${BACKUP_SSH_KNOWN_HOSTS_PATH:-./secrets/known_hosts}:/run/ssh/known_hosts:ro
+    environment:
+      BACKUP_SSH_KEY: /run/ssh/backup_key
+      BACKUP_SSH_KNOWN_HOSTS: /run/ssh/known_hosts
