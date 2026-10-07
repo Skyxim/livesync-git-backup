@@ -88,6 +88,44 @@ if [ -n "${BACKUP_SSH_KEY:-}" ]; then
     export GIT_SSH_COMMAND="ssh $ssh_options"
 fi
 
+prepare_branch() {
+    remote_refs=
+    if ! remote_refs=$(git --git-dir="$repository" ls-remote --heads origin "$branch"); then
+        echo "failed to inspect remote branch: $branch" >&2
+        return 1
+    fi
+
+    if [ -z "$remote_refs" ]; then
+        return 0
+    fi
+
+    git --git-dir="$repository" fetch origin "$branch" >/dev/null
+    remote_head=$(git --git-dir="$repository" rev-parse "refs/remotes/origin/$branch")
+    local_ref="refs/heads/$branch"
+
+    if ! git --git-dir="$repository" show-ref --verify --quiet "$local_ref"; then
+        git --git-dir="$repository" update-ref "$local_ref" "$remote_head"
+        return 0
+    fi
+
+    local_head=$(git --git-dir="$repository" rev-parse "$local_ref")
+    if [ "$local_head" = "$remote_head" ]; then
+        return 0
+    fi
+
+    if git --git-dir="$repository" merge-base --is-ancestor "$local_head" "$remote_head"; then
+        git --git-dir="$repository" update-ref "$local_ref" "$remote_head"
+    elif ! git --git-dir="$repository" merge-base --is-ancestor "$remote_head" "$local_head"; then
+        echo "backup history diverged from remote branch: $branch" >&2
+        return 1
+    fi
+}
+
+if [ -n "$remote" ]; then
+    git --git-dir="$repository" symbolic-ref HEAD "refs/heads/$branch"
+    prepare_branch
+fi
+
 make_snapshot() {
     snapshot=$(mktemp -d)
     trap 'rm -rf "$snapshot"' EXIT INT TERM
