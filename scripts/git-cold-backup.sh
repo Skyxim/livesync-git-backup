@@ -123,10 +123,13 @@ prepare_branch() {
 
 if [ -n "$remote" ]; then
     git --git-dir="$repository" symbolic-ref HEAD "refs/heads/$branch"
-    prepare_branch
 fi
 
 make_snapshot() {
+    if [ -n "$remote" ]; then
+        prepare_branch
+    fi
+
     snapshot=$(mktemp -d)
     trap 'rm -rf "$snapshot"' EXIT INT TERM
 
@@ -140,7 +143,10 @@ make_snapshot() {
     fi
 
     if [ -n "$remote" ] && git --git-dir="$repository" rev-parse --verify HEAD >/dev/null 2>&1; then
-        git --git-dir="$repository" push origin "HEAD:$branch"
+        if ! git --git-dir="$repository" push origin "HEAD:$branch"; then
+            echo "backup push was rejected; refusing to merge or force-push remote history" >&2
+            return 1
+        fi
     fi
 
     rm -rf "$snapshot"
