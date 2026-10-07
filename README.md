@@ -51,9 +51,22 @@ COUCHDB_PASSWORD=<COUCHDB_PASSWORD>
 COUCHDB_DBNAME=obsidian-livesync
 LIVESYNC_ENCRYPT=true
 LIVESYNC_PASSPHRASE=<LIVESYNC_PASSPHRASE>
+LIVESYNC_INTERVAL_SECONDS=
+LIVESYNC_USE_REQUEST_API=true
+LIVESYNC_USE_PATH_OBFUSCATION=false
+LIVESYNC_ENCRYPT_INTERNAL_METADATA=false
+LIVESYNC_USE_PLUGIN_SYNC_V2=false
+LIVESYNC_CUSTOM_CHUNK_SIZE=0
+LIVESYNC_E2EE_ALGORITHM=v2
 ```
 
 `COUCHDB_URI` 必须从容器内部可访问。若 CouchDB 运行在宿主机上，不能直接填写容器内的 `localhost`；Linux 通常使用宿主机网关地址，或将 CouchDB 纳入同一 Compose 网络。
+
+默认使用 CouchDB `_changes` 事件流，`LIVESYNC_INTERVAL_SECONDS` 留空即可。只有在代理会关闭长连接、且事件流产生 524 时，才将它设置为正整数，例如 `60`，作为轮询回退。
+
+如果该 CouchDB 配置在 Obsidian 中启用了 **Use Request API**，将 `LIVESYNC_USE_REQUEST_API=true` 保持一致。事件流是否能穿过 Cloudflare 仍取决于代理行为；如果 CLI 仍收到 524，优先为 CouchDB 提供不经过 Cloudflare 空闲超时的直连地址，再保持事件模式。
+
+接入已有 LiveSync 远端时，`LIVESYNC_USE_REQUEST_API`、`LIVESYNC_USE_PATH_OBFUSCATION`、`LIVESYNC_ENCRYPT_INTERNAL_METADATA`、`LIVESYNC_USE_PLUGIN_SYNC_V2`、`LIVESYNC_CUSTOM_CHUNK_SIZE` 和 `LIVESYNC_E2EE_ALGORITHM` 必须与远端保持一致。配置不一致时，CLI 会拒绝同步，不能通过猜测参数解决；应以已有 Obsidian 客户端或 CLI 的配置检查结果为准。
 
 ### 2. 启动
 
