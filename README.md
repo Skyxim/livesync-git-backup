@@ -129,6 +129,8 @@ BACKUP_SSH_KNOWN_HOSTS_PATH=./secrets/known_hosts
 docker compose -f compose.yaml -f compose.ssh.yaml up -d --build
 ```
 
+使用 `git@host:path` 或 `ssh://` 形式的远端时，必须同时提供私钥和 `known_hosts`；脚本会拒绝缺少其中任一项的 SSH 配置。远端 push 失败会让备份容器退出并由 Compose 重启，本地 Git 提交仍会保留，具体错误可在 `docker compose logs backup` 中查看。
+
 远端仓库应当是空仓库或允许该备份分支直接推进的仓库。脚本不会强制推送；若远端存在不相关历史，备份服务会报告 push 失败而保留本地提交。
 
 不要把 token、密码或私钥放进 `BACKUP_REMOTE`、`.env` 或仓库文件。若使用 HTTPS 远端，请在运行环境中提供标准 Git credential helper，并避免将凭据嵌入 URL。
@@ -163,6 +165,12 @@ docker compose up -d
 ```
 
 生产环境建议将 `LIVESYNC_IMAGE` 从 `edge` 改成经过验证的固定 tag 或镜像 digest，并在升级前保留 Git 冷备提交。
+
+Git 裸仓库默认不自动清理历史。如需回收已不再被引用的对象，可在确认恢复策略后手动执行：
+
+```bash
+git --git-dir=data/git-backup gc
+```
 
 ## 数据目录
 

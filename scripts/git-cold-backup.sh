@@ -51,6 +51,12 @@ if [ -n "$remote" ]; then
             echo "BACKUP_REMOTE must not contain embedded credentials" >&2
             exit 2
             ;;
+        git@*|ssh://*|*@*:*)
+            if [ -z "${BACKUP_SSH_KEY:-}" ] || [ -z "${BACKUP_SSH_KNOWN_HOSTS:-}" ]; then
+                echo "SSH BACKUP_REMOTE requires BACKUP_SSH_KEY and BACKUP_SSH_KNOWN_HOSTS" >&2
+                exit 2
+            fi
+            ;;
     esac
 
     if git --git-dir="$repository" remote get-url origin >/dev/null 2>&1; then
@@ -66,13 +72,18 @@ if [ -n "${BACKUP_SSH_KEY:-}" ]; then
         exit 1
     fi
 
-    ssh_options="-i $BACKUP_SSH_KEY -o IdentitiesOnly=yes"
+    shell_quote() {
+        quoted=$(printf '%s' "$1" | sed "s/'/'\\\\''/g")
+        printf "'%s'" "$quoted"
+    }
+
+    ssh_options="-i $(shell_quote "$BACKUP_SSH_KEY") -o IdentitiesOnly=yes"
     if [ -n "${BACKUP_SSH_KNOWN_HOSTS:-}" ]; then
         if [ ! -r "$BACKUP_SSH_KNOWN_HOSTS" ]; then
             echo "BACKUP_SSH_KNOWN_HOSTS is not readable" >&2
             exit 1
         fi
-        ssh_options="$ssh_options -o UserKnownHostsFile=$BACKUP_SSH_KNOWN_HOSTS -o StrictHostKeyChecking=yes"
+        ssh_options="$ssh_options -o UserKnownHostsFile=$(shell_quote "$BACKUP_SSH_KNOWN_HOSTS") -o StrictHostKeyChecking=yes"
     fi
     export GIT_SSH_COMMAND="ssh $ssh_options"
 fi
